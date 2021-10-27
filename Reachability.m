@@ -525,10 +525,21 @@ static void TMReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkRea
         
         if(SCNetworkReachabilityGetFlags(reachabilityRef, &flags)) {
             if (flags & kSCNetworkReachabilityFlagsIsWWAN) {
-                if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
-                    CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc] init];
-                    NSString *currentRadioAccessTechnology = info.currentRadioAccessTechnology;
-                    if (currentRadioAccessTechnology) {
+
+                CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc] init];
+                NSString *currentRadioAccessTechnology = info.currentRadioAccessTechnology;
+                if (currentRadioAccessTechnology) {
+                    if (@available(iOS 14.1, *)) {
+                        if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyNRNSA] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyNR]) {
+                            return ReachableVia5G;
+                        } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyLTE]) {
+                            return ReachableVia4G;
+                        } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
+                            return ReachableVia2G;
+                        } else {
+                            return ReachableVia3G;
+                        }
+                    } else {
                         if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyLTE]) {
                             return ReachableVia4G;
                         } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
