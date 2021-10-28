@@ -74,7 +74,8 @@ typedef NS_ENUM(NSInteger, NetworkStatus) {
     ReachableViaWWAN = 1,
     ReachableVia2G = 3,
     ReachableVia3G = 4,
-    ReachableVia4G = 5
+    ReachableVia4G = 5,
+    ReachableVia5G = 6,
 };
 
 @class Reachability;
