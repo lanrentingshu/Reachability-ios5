@@ -518,38 +518,42 @@ static void TMReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkRea
 
 - (NetworkStatus)currentReachabilityDetailStatus {
     NetworkStatus curStatus = [self currentReachabilityStatus];
-    
+
     if (curStatus == ReachableViaWWAN) {
-        
+
         SCNetworkReachabilityFlags flags = 0;
-        
+
         if(SCNetworkReachabilityGetFlags(reachabilityRef, &flags)) {
             if (flags & kSCNetworkReachabilityFlagsIsWWAN) {
 
                 CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc] init];
-                NSString *currentRadioAccessTechnology = info.currentRadioAccessTechnology;
-                if (currentRadioAccessTechnology) {
-                    if (@available(iOS 14.1, *)) {
-                        if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyNRNSA] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyNR]) {
-                            return ReachableVia5G;
-                        } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyLTE]) {
-                            return ReachableVia4G;
-                        } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
-                            return ReachableVia2G;
-                        } else {
-                            return ReachableVia3G;
-                        }
-                    } else {
-                        if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyLTE]) {
-                            return ReachableVia4G;
-                        } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
-                            return ReachableVia2G;
-                        } else {
-                            return ReachableVia3G;
+                NSString *currentRadioAccessTechnology;
+                if (@available(iOS 12.1, *)) {
+                    if (info && [info respondsToSelector:@selector(serviceCurrentRadioAccessTechnology)]) {
+                        NSDictionary<NSString *, NSString *> *infos = info.serviceCurrentRadioAccessTechnology;
+                        if (infos.allKeys.count) {
+                            currentRadioAccessTechnology = [infos objectForKey:infos.allKeys[0]];
                         }
                     }
+                } else {
+                    currentRadioAccessTechnology = info.currentRadioAccessTechnology;
                 }
-                
+                if (currentRadioAccessTechnology) {
+
+                    if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyLTE]) {
+                        return ReachableVia4G;
+                    } else if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
+                        return ReachableVia2G;
+                    } else {
+                        if (@available(iOS 14.1, *)) {
+                            if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyNRNSA] || [currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyNR]) {
+                                return ReachableVia5G;
+                            }
+                        }
+                        return ReachableVia3G;
+                    }
+                }
+
                 if ((flags & kSCNetworkReachabilityFlagsTransientConnection) == kSCNetworkReachabilityFlagsTransientConnection) {
                     if((flags & kSCNetworkReachabilityFlagsConnectionRequired) == kSCNetworkReachabilityFlagsConnectionRequired) {
                         return ReachableVia2G;
@@ -560,7 +564,7 @@ static void TMReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkRea
             }
         }
     }
-    
+
     return curStatus;
 }
 
